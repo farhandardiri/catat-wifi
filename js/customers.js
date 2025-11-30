@@ -680,6 +680,15 @@ Data yang dihapus tidak dapat dikembalikan.
       });
   },
 
+  determineReminderType(daysLate) {
+    if (daysLate >= 7) {
+      return "final";
+    } else if (daysLate >= 3) {
+      return "urgent";
+    } else {
+      return "gentle";
+    }
+  },
   renderLatePaymentsTable(latePayments) {
     const tbody = document.getElementById("latePaymentsTableBody");
     if (!tbody) return;
@@ -710,7 +719,15 @@ Data yang dihapus tidak dapat dikembalikan.
         const today = new Date();
         const daysLate = Math.floor((today - endDate) / (1000 * 60 * 60 * 24));
         const amountDue = customer.price || customer.harga || 0;
-        const originalIndex = customer.originalIndex; // Gunakan index asli
+        const originalIndex = customer.originalIndex;
+
+        // Rekomendasi otomatis berdasarkan hari keterlambatan
+        const recommendedType = this.determineReminderType(daysLate);
+        const recommendedText = {
+          gentle: "RINGAN",
+          urgent: "MENDESAK",
+          final: "AKHIR",
+        }[recommendedType];
 
         return `
             <tr class="${
@@ -743,24 +760,34 @@ Data yang dihapus tidak dapat dikembalikan.
                 )}</td>
                 <td><small class="text-muted">Belum pernah</small></td>
                 <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="notifications.sendSingleReminder(${originalIndex}, 'urgent')" title="Ingatkan">
-                            <i class="bi bi-chat-text"></i>
+                    <div class="btn-group-vertical btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" 
+                                onclick="notifications.sendSingleReminder(${originalIndex}, 'gentle')">
+                            <i class="bi bi-chat-text"></i> Gentle
                         </button>
-                        <button class="btn btn-outline-success" onclick="customers.extendCustomer(${originalIndex}, 30)" title="Perpanjang 30 hari">
-                            <i class="bi bi-calendar-plus"></i>
+                        <button type="button" class="btn btn-outline-warning btn-sm mb-1" 
+                                onclick="notifications.sendSingleReminder(${originalIndex}, 'urgent')">
+                            <i class="bi bi-exclamation-triangle"></i> Urgent
                         </button>
-                        <button class="btn btn-outline-danger" onclick="customers.deleteCustomer(${originalIndex})" title="Hapus">
-                            <i class="bi bi-trash"></i>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="notifications.sendSingleReminder(${originalIndex}, 'final')">
+                            <i class="bi bi-exclamation-octagon"></i> Final
                         </button>
+                        <button type="button" class="btn btn-outline-success btn-sm mt-1" onclick="customers.extendCustomer(${originalIndex}, 30)" title="Perpanjang 30 hari">
+                               <i class="bi bi-calendar-plus"></i>
+                           </button>
+                           <button type="button" class="btn btn-outline-danger btn-sm mt-1" onclick="customers.deleteCustomer(${originalIndex})" title="Hapus">
+                               <i class="bi bi-trash"></i>
+                           </button>
                     </div>
+                    <div class="mt-1 small text-center">
+                        <span class="badge bg-info">Rekomendasi: ${recommendedText}</span>
+                    </div>
+
                 </td>
-            </tr>
-        `;
+            </tr>`;
       })
       .join("");
-
-    this.updateSelectionUI();
   },
 
   async extendCustomer(index, days = 30) {

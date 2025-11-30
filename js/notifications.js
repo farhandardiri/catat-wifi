@@ -4,27 +4,50 @@ const notifications = {
   settings: {},
   isSending: false,
   fonnteApiUrl: "https://api.fonnte.com",
+  lastNotification: null,
 
   init() {
     this.loadTemplates();
     this.loadSettings();
     this.setupEventListeners();
+    this.loadLastNotificationFromStorage(); // ✅ Load last notification
     console.log("Notifications system initialized - Direct Fonnte API");
   },
 
   setupEventListeners() {
-    // Auto-save templates
+    // Auto-save templates - PERBAIKI: gunakan 'change' event juga
     document.getElementById("templateGentle")?.addEventListener("input", () => {
       this.updatePreviews();
       this.autoSaveTemplates();
     });
+    document
+      .getElementById("templateGentle")
+      ?.addEventListener("change", () => {
+        this.saveTemplates(); // Langsung save ketika selesai edit
+      });
+
     document.getElementById("templateUrgent")?.addEventListener("input", () => {
       this.updatePreviews();
       this.autoSaveTemplates();
     });
+    document
+      .getElementById("templateUrgent")
+      ?.addEventListener("change", () => {
+        this.saveTemplates();
+      });
+
     document.getElementById("templateFinal")?.addEventListener("input", () => {
       this.updatePreviews();
       this.autoSaveTemplates();
+    });
+    document.getElementById("templateFinal")?.addEventListener("change", () => {
+      this.saveTemplates();
+    });
+
+    // Tambahkan button manual save templates
+    document.getElementById("saveTemplates")?.addEventListener("click", () => {
+      this.saveTemplates();
+      app.showToast("Template pesan berhasil disimpan!", "success");
     });
 
     // Test connection button
@@ -46,14 +69,30 @@ const notifications = {
   },
 
   loadTemplates() {
-    const saved = localStorage.getItem("notificationTemplates");
-    this.templates = saved ? JSON.parse(saved) : { ...defaultTemplates };
+    try {
+      const saved = localStorage.getItem("notificationTemplates");
+      console.log("Loading templates from localStorage:", saved);
 
-    document.getElementById("templateGentle").value = this.templates.gentle;
-    document.getElementById("templateUrgent").value = this.templates.urgent;
-    document.getElementById("templateFinal").value = this.templates.final;
+      this.templates = saved ? JSON.parse(saved) : { ...defaultTemplates };
 
-    this.updatePreviews();
+      // Apply to form - PASTIKAN element ada sebelum set value
+      const gentleEl = document.getElementById("templateGentle");
+      const urgentEl = document.getElementById("templateUrgent");
+      const finalEl = document.getElementById("templateFinal");
+
+      if (gentleEl)
+        gentleEl.value = this.templates.gentle || defaultTemplates.gentle;
+      if (urgentEl)
+        urgentEl.value = this.templates.urgent || defaultTemplates.urgent;
+      if (finalEl)
+        finalEl.value = this.templates.final || defaultTemplates.final;
+
+      this.updatePreviews();
+      console.log("Templates loaded:", this.templates);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+      this.templates = { ...defaultTemplates };
+    }
   },
 
   loadSettings() {
@@ -80,17 +119,34 @@ const notifications = {
   },
 
   saveTemplates() {
-    this.templates = {
-      gentle: document.getElementById("templateGentle").value,
-      urgent: document.getElementById("templateUrgent").value,
-      final: document.getElementById("templateFinal").value,
-    };
+    try {
+      // PASTIKAN ambil value terbaru dari textarea
+      const gentleEl = document.getElementById("templateGentle");
+      const urgentEl = document.getElementById("templateUrgent");
+      const finalEl = document.getElementById("templateFinal");
 
-    localStorage.setItem(
-      "notificationTemplates",
-      JSON.stringify(this.templates)
-    );
-    console.log("Templates saved successfully");
+      if (!gentleEl || !urgentEl || !finalEl) {
+        console.error("Template elements not found!");
+        return;
+      }
+
+      this.templates = {
+        gentle: gentleEl.value,
+        urgent: urgentEl.value,
+        final: finalEl.value,
+      };
+
+      localStorage.setItem(
+        "notificationTemplates",
+        JSON.stringify(this.templates)
+      );
+      console.log("Templates saved successfully:", this.templates);
+
+      // Update preview setelah save
+      this.updatePreviews();
+    } catch (error) {
+      console.error("Error saving templates:", error);
+    }
   },
 
   saveSettings() {
@@ -129,13 +185,23 @@ const notifications = {
   },
 
   generateMessage(customer, type) {
+    // PASTIKAN menggunakan template terbaru dari property templates
     let template = this.templates[type];
 
-    template = template.replace(/{name}/g, customer.name);
-    template = template.replace(/{package}/g, customer.package);
-    template = template.replace(/{price}/g, customer.price);
-    template = template.replace(/{due_date}/g, customer.due_date);
-    template = template.replace(/{days_late}/g, customer.days_late);
+    // Fallback ke default template jika tidak ada
+    if (!template) {
+      template = defaultTemplates[type];
+      console.warn(`Template ${type} not found, using default`);
+    }
+
+    console.log(`Generating message for ${type}:`, template);
+
+    // Gunakan nullish coalescing untuk handle undefined values
+    template = template.replace(/{name}/g, customer.name || "");
+    template = template.replace(/{package}/g, customer.package || "");
+    template = template.replace(/{price}/g, customer.price || "");
+    template = template.replace(/{due_date}/g, customer.due_date || "");
+    template = template.replace(/{days_late}/g, customer.days_late || "");
 
     return template;
   },
@@ -230,9 +296,9 @@ const notifications = {
           price: this.formatCurrencyForMessage(
             customer.price || customer.harga
           ),
-          due_date: this.formatDate(customer.endDate || customer.berakhir),
+          due_date: this.formatDate(customer.Berakhir || customer.berakhir),
           days_late: this.calculateDaysLate(
-            customer.endDate || customer.berakhir
+            customer.Berakhir || customer.berakhir
           ),
         },
         type
@@ -260,11 +326,34 @@ const notifications = {
         body: JSON.stringify({
           target: phone,
           message: message,
-          delay: "2", // Delay 2 detik
+          delay: "2",
         }),
       });
 
       const result = await response.json();
+
+      // ✅ SIMPAN DATA TERAKHIR
+      this.lastNotification = {
+        customer: {
+          name: customer.name || customer.nama,
+          phone: phone,
+          package: customer.package || customer.paket,
+          days_late: this.calculateDaysLate(
+            customer.Berakhir || customer.berakhir
+          ),
+        },
+        message: message,
+        type: type,
+        status:
+          result.status === "sent" || result.status === true || result.messageId
+            ? "success"
+            : "failed",
+        timestamp: new Date().toISOString(),
+        response: result,
+      };
+
+      // ✅ TAMPILKAN DATA TERAKHIR DI UI
+      this.showLastNotification();
 
       if (
         result.status === "sent" ||
@@ -285,6 +374,10 @@ const notifications = {
         );
         this.logNotification(phone, message, "failed", result);
       }
+
+      this.saveLastNotificationToStorage(); // ✅ Simpan ke localStorage
+      this.showLastNotification(); // ✅ Tampilkan di UI
+      this.showLastNotificationToast(); // ✅ Tampilkan toast (optional)
     } catch (error) {
       console.error("Send message error:", error);
       app.showToast(`❌ Error mengirim notifikasi: ${error.message}`, "error");
@@ -296,6 +389,166 @@ const notifications = {
       );
     } finally {
       this.isSending = false;
+    }
+  },
+
+  // ✅ METHOD BARU: Tampilkan data notifikasi terakhir
+  showLastNotification() {
+    if (!this.lastNotification) return;
+
+    const container = document.getElementById("lastNotificationContainer");
+    if (!container) return;
+
+    const notif = this.lastNotification;
+    const statusClass = notif.status === "success" ? "bg-success" : "bg-danger";
+    const statusIcon =
+      notif.status === "success" ? "bi-check-circle" : "bi-x-circle";
+
+    container.innerHTML = `
+      <div class="card border-0 shadow-sm">
+        <div class="card-header ${statusClass} text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+              <i class="bi ${statusIcon} me-2"></i>
+              Notifikasi Terakhir
+            </h6>
+            <small>${new Date(notif.timestamp).toLocaleString("id-ID")}</small>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Pelanggan:</strong> ${notif.customer.name}<br>
+              <strong>No HP:</strong> ${notif.customer.phone}<br>
+              <strong>Paket:</strong> ${notif.customer.package}
+            </div>
+            <div class="col-md-6">
+              <strong>Jenis:</strong> <span class="badge ${this.getTypeBadgeClass(
+                notif.type
+              )}">${notif.type.toUpperCase()}</span><br>
+              <strong>Status:</strong> <span class="badge ${
+                notif.status === "success" ? "bg-success" : "bg-danger"
+              }">${notif.status === "success" ? "BERHASIL" : "GAGAL"}</span><br>
+              <strong>Telat:</strong> <span class="badge bg-warning">${
+                notif.customer.days_late
+              } hari</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <strong>Pesan:</strong>
+            <div class="alert alert-light mt-2">
+              ${notif.message}
+            </div>
+          </div>
+          ${
+            notif.response
+              ? `
+          <div class="mt-2">
+            <strong>Response API:</strong>
+            <pre class="bg-dark text-light p-2 rounded small mt-2">${JSON.stringify(
+              notif.response,
+              null,
+              2
+            )}</pre>
+          </div>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    `;
+
+    // Auto-scroll ke notifikasi terakhir
+    container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  },
+
+  // ✅ METHOD BARU: Dapatkan class badge berdasarkan jenis notifikasi
+  getTypeBadgeClass(type) {
+    const classes = {
+      gentle: "bg-primary",
+      urgent: "bg-warning",
+      final: "bg-danger",
+    };
+    return classes[type] || "bg-secondary";
+  },
+
+  // ✅ METHOD BARU: Dapatkan data notifikasi terakhir
+  getLastNotification() {
+    return this.lastNotification;
+  },
+
+  // ✅ METHOD BARU: Clear data notifikasi terakhir
+  clearLastNotification() {
+    this.lastNotification = null;
+    const container = document.getElementById("lastNotificationContainer");
+    if (container) {
+      container.innerHTML = "";
+    }
+  },
+
+  showLastNotificationToast() {
+    if (!this.lastNotification) return;
+
+    const notif = this.lastNotification;
+
+    // Buat custom toast
+    const toastHtml = `
+    <div class="toast show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 350px;">
+      <div class="toast-header ${
+        notif.status === "success"
+          ? "bg-success text-white"
+          : "bg-danger text-white"
+      }">
+        <i class="bi ${
+          notif.status === "success" ? "bi-check-circle" : "bi-x-circle"
+        } me-2"></i>
+        <strong class="me-auto">Notifikasi Terkirim</strong>
+        <small>${new Date(notif.timestamp).toLocaleTimeString("id-ID")}</small>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body">
+        <strong>${notif.customer.name}</strong><br>
+        <small>${notif.customer.phone} • ${notif.type.toUpperCase()}</small>
+        <div class="mt-2 small bg-light p-2 rounded">
+          ${notif.message.substring(0, 100)}...
+        </div>
+      </div>
+    </div>
+  `;
+
+    // Tambahkan ke body
+    const toastContainer =
+      document.getElementById("notificationToasts") || document.body;
+    const toastElement = document.createElement("div");
+    toastElement.innerHTML = toastHtml;
+    toastContainer.appendChild(toastElement);
+
+    // Auto remove setelah 5 detik
+    setTimeout(() => {
+      toastElement.remove();
+    }, 5000);
+  },
+
+  // ✅ METHOD BARU: Simpan last notification ke localStorage
+  saveLastNotificationToStorage() {
+    if (this.lastNotification) {
+      localStorage.setItem(
+        "lastNotification",
+        JSON.stringify(this.lastNotification)
+      );
+    }
+  },
+
+  // ✅ METHOD BARU: Load last notification dari localStorage
+  loadLastNotificationFromStorage() {
+    try {
+      const saved = localStorage.getItem("lastNotification");
+      if (saved) {
+        this.lastNotification = JSON.parse(saved);
+        this.showLastNotification();
+      }
+    } catch (error) {
+      console.error("Error loading last notification:", error);
     }
   },
 
@@ -340,9 +593,9 @@ const notifications = {
               price: this.formatCurrencyForMessage(
                 customer.price || customer.harga
               ),
-              due_date: this.formatDate(customer.endDate || customer.berakhir),
+              due_date: this.formatDate(customer.Berakhir || customer.berakhir),
               days_late: this.calculateDaysLate(
-                customer.endDate || customer.berakhir
+                customer.Berakhir || customer.berakhir
               ),
             },
             type
@@ -443,9 +696,9 @@ const notifications = {
     return phoneRegex.test(phone);
   },
 
-  calculateDaysLate(endDate) {
+  calculateDaysLate(Berakhir) {
     try {
-      const dueDate = new Date(endDate);
+      const dueDate = new Date(Berakhir);
       const today = new Date();
       const daysLate = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
       return Math.max(0, daysLate);

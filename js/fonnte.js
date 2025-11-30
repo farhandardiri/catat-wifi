@@ -1,7 +1,7 @@
 // Fonnte API Integration
 const fonnte = {
   API_URL: "https://api.fonnte.com/send",
-  token: "",
+  token: "DP85E5FN9HnDogvNAe78",
 
   loadConfig() {
     this.token = localStorage.getItem("fonnteToken") || "";
@@ -21,9 +21,12 @@ const fonnte = {
     }
 
     try {
-      const response = await fetch(this.API_URL, {
+      const response = await fetch("https://api.fonnte.com/device", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: this.token,
+        },
         body: JSON.stringify({
           target: "6282334130897", // Test number
           message: "Test connection dari sistem WiFi Management",
