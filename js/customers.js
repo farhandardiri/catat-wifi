@@ -758,7 +758,6 @@ Data yang dihapus tidak dapat dikembalikan.
                 <td class="fw-bold text-danger">${app.formatCurrency(
                   amountDue
                 )}</td>
-                <td><small class="text-muted">Belum pernah</small></td>
                 <td>
                     <div class="btn-group-vertical btn-group-sm" role="group">
                         <button type="button" class="btn btn-outline-primary btn-sm mb-1" 
