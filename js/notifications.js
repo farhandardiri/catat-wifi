@@ -11,7 +11,7 @@ const notifications = {
     this.loadSettings();
     this.setupEventListeners();
     this.loadLastNotificationFromStorage(); // ✅ Load last notification
-    console.log("Notifications system initialized - Direct Fonnte API");
+    // console.log("Notifications system initialized - Direct Fonnte API");
   },
 
   setupEventListeners() {
@@ -71,7 +71,7 @@ const notifications = {
   loadTemplates() {
     try {
       const saved = localStorage.getItem("notificationTemplates");
-      console.log("Loading templates from localStorage:", saved);
+      // console.log("Loading templates from localStorage:", saved);
 
       this.templates = saved ? JSON.parse(saved) : { ...defaultTemplates };
 
@@ -88,9 +88,9 @@ const notifications = {
         finalEl.value = this.templates.final || defaultTemplates.final;
 
       this.updatePreviews();
-      console.log("Templates loaded:", this.templates);
+      // console.log("Templates loaded:", this.templates);
     } catch (error) {
-      console.error("Error loading templates:", error);
+      // console.error("Error loading templates:", error);
       this.templates = { ...defaultTemplates };
     }
   },
@@ -140,7 +140,7 @@ const notifications = {
         "notificationTemplates",
         JSON.stringify(this.templates)
       );
-      console.log("Templates saved successfully:", this.templates);
+      // console.log("Templates saved successfully:", this.templates);
 
       // Update preview setelah save
       this.updatePreviews();
@@ -158,7 +158,7 @@ const notifications = {
 
     localStorage.setItem("notificationSettings", JSON.stringify(this.settings));
     app.showToast("Pengaturan notifikasi berhasil disimpan!", "success");
-    console.log("Settings saved:", this.settings);
+    // console.log("Settings saved:", this.settings);
   },
 
   updatePreviews() {
@@ -194,7 +194,7 @@ const notifications = {
       console.warn(`Template ${type} not found, using default`);
     }
 
-    console.log(`Generating message for ${type}:`, template);
+    // console.log(`Generating message for ${type}:`, template);
 
     // Gunakan nullish coalescing untuk handle undefined values
     template = template.replace(/{name}/g, customer.name || "");
@@ -803,11 +803,11 @@ const notifications = {
   },
 
   startAutoReminder() {
-    console.log("Auto reminder started");
+    // console.log("Auto reminder started");
   },
 
   stopAutoReminder() {
-    console.log("Auto reminder stopped");
+    // console.log("Auto reminder stopped");
   },
 };
 

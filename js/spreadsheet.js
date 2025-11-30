@@ -6,12 +6,12 @@ const spreadsheet = {
 
   setAccessToken(token) {
     this.accessToken = token;
-    console.log("Write access enabled with OAuth token");
+    // console.log("Write access enabled with OAuth token");
   },
 
   // Method untuk READ operations (tanpa login)
   async makeReadRequest(url) {
-    console.log("Making READ request to:", url);
+    // console.log("Making READ request to:", url);
 
     // Coba dengan API Key dulu (tanpa login)
     const urlWithKey = `${url}?key=${this.API_KEY}`;
@@ -20,7 +20,7 @@ const spreadsheet = {
       const response = await fetch(urlWithKey);
 
       if (response.ok) {
-        console.log("READ success with API Key");
+        // console.log("READ success with API Key");
         return response;
       }
 
@@ -30,7 +30,7 @@ const spreadsheet = {
         `API Error: ${errorData.error?.message || "Unknown error"}`
       );
     } catch (error) {
-      console.log("READ with API Key failed:", error.message);
+      // console.log("READ with API Key failed:", error.message);
       throw error;
     }
   },
@@ -43,7 +43,7 @@ const spreadsheet = {
       );
     }
 
-    console.log("Making WRITE request with OAuth token");
+    // console.log("Making WRITE request with OAuth token");
 
     const defaultOptions = {
       headers: {
@@ -73,16 +73,16 @@ const spreadsheet = {
   // READ: Get transactions (tanpa login)
   async getTransactions() {
     try {
-      console.log("Getting transactions (READ operation)...");
+      // console.log("Getting transactions (READ operation)...");
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.SHEET_ID}/values/Transaksi`;
 
       const response = await this.makeReadRequest(url);
       const data = await response.json();
 
-      console.log("Raw transactions data:", data);
+      // console.log("Raw transactions data:", data);
 
       if (!data.values) {
-        console.log("No transactions data found");
+        // console.log("No transactions data found");
         return [];
       }
 
@@ -95,7 +95,7 @@ const spreadsheet = {
         return transaction;
       });
 
-      console.log("Processed transactions count:", transactions.length);
+      // console.log("Processed transactions count:", transactions.length);
       return transactions;
     } catch (error) {
       console.error("Error getTransactions:", error);
@@ -107,14 +107,14 @@ const spreadsheet = {
   // READ: Get customers (tanpa login)
   async getCustomers() {
     try {
-      console.log("Getting customers (READ operation)...");
+      // console.log("Getting customers (READ operation)...");
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.SHEET_ID}/values/Customers`;
 
       const response = await this.makeReadRequest(url);
       const data = await response.json();
 
       if (!data.values) {
-        console.log("No customers data found");
+        // console.log("No customers data found");
         return [];
       }
 
@@ -127,10 +127,10 @@ const spreadsheet = {
         return customer;
       });
 
-      console.log("Processed customers count:", customers.length);
+      // console.log("Processed customers count:", customers.length);
       return customers;
     } catch (error) {
-      console.error("Error getCustomers:", error);
+      // console.error("Error getCustomers:", error);
       return this.getSampleData().customers;
     }
   },
@@ -169,10 +169,10 @@ const spreadsheet = {
       }
 
       const result = await response.json();
-      console.log("Data tersimpan:", result);
+      // console.log("Data tersimpan:", result);
       return result;
     } catch (error) {
-      console.error("Error saveTransaction:", error);
+      // console.error("Error saveTransaction:", error);
       throw error; // Re-throw agar bisa ditangani di UI
     }
   },
@@ -212,10 +212,10 @@ const spreadsheet = {
       }
 
       const result = await response.json();
-      console.log("Customer tersimpan:", result);
+      // console.log("Customer tersimpan:", result);
       return result;
     } catch (error) {
-      console.error("Error saveCustomer:", error);
+      // console.error("Error saveCustomer:", error);
       throw error;
     }
   },
@@ -260,10 +260,10 @@ const spreadsheet = {
       }
 
       const result = await response.json();
-      console.log("Customer updated:", result);
+      // console.log("Customer updated:", result);
       return result;
     } catch (error) {
-      console.error("Error updateCustomer:", error);
+      // console.error("Error updateCustomer:", error);
       throw error;
     }
   },
@@ -305,10 +305,10 @@ const spreadsheet = {
       }
 
       const result = await response.json();
-      console.log("Customer deleted:", result);
+      // console.log("Customer deleted:", result);
       return result;
     } catch (error) {
-      console.error("Error deleteCustomer:", error);
+      // console.error("Error deleteCustomer:", error);
       throw error;
     }
   },

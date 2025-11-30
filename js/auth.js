@@ -4,7 +4,7 @@ const auth = {
   tokenClient: null,
 
   init() {
-    console.log("Auth initialized for write operations");
+    // console.log("Auth initialized for write operations");
     this.checkExistingLogin();
     // Google Auth akan di-init ketika dibutuhkan
   },
@@ -12,7 +12,7 @@ const auth = {
   initializeGoogleAuth() {
     return new Promise((resolve, reject) => {
       try {
-        console.log("Initializing Google Auth...");
+        // console.log("Initializing Google Auth...");
 
         // Pastikan GSI sudah loaded
         if (
@@ -28,7 +28,7 @@ const auth = {
             "1060874294167-ns49dcu2q2il6cp04miccvgti82duf0v.apps.googleusercontent.com", // GANTI dengan Client ID Anda
           scope: "https://www.googleapis.com/auth/spreadsheets",
           callback: (response) => {
-            console.log("Token response received");
+            // console.log("Token response received");
             this.handleTokenResponse(response);
             resolve();
           },
@@ -38,7 +38,7 @@ const auth = {
           },
         });
 
-        console.log("Google Auth initialized successfully");
+        // console.log("Google Auth initialized successfully");
         resolve();
       } catch (error) {
         console.error("Failed to initialize Google Auth:", error);
@@ -49,7 +49,7 @@ const auth = {
 
   async handleTokenResponse(response) {
     try {
-      console.log("Processing token response:", response);
+      // console.log("Processing token response:", response);
 
       if (response.error) {
         throw new Error(response.error);
@@ -91,7 +91,7 @@ const auth = {
       this.accessToken = savedToken;
       spreadsheet.setAccessToken(this.accessToken);
       app.updateLoginStatus();
-      console.log("Existing login found and restored");
+      // console.log("Existing login found and restored");
     }
   },
 
@@ -112,7 +112,7 @@ const auth = {
 
   async login() {
     try {
-      console.log("Login initiated");
+      // console.log("Login initiated");
 
       // Initialize Google Auth jika belum
       if (!this.tokenClient) {
@@ -128,12 +128,12 @@ const auth = {
   },
 
   logout() {
-    console.log("Logout initiated");
+    // console.log("Logout initiated");
 
     // Revoke token jika ada
     if (this.accessToken) {
       google.accounts.oauth2.revoke(this.accessToken, () => {
-        console.log("Token revoked");
+        // console.log("Token revoked");
       });
     }
 

@@ -34,13 +34,13 @@ const customers = {
       modal.show();
       this.setupPackagePriceListener();
 
-      console.log(
-        "Customer modal shown in",
-        customerData ? "EDIT" : "ADD",
-        "mode"
-      );
+      // console.log(
+      //   "Customer modal shown in",
+      //   customerData ? "EDIT" : "ADD",
+      //   "mode"
+      // );
     } catch (error) {
-      console.error("Error showing customer modal:", error);
+      // console.error("Error showing customer modal:", error);
       app.showToast("Gagal membuka form konsumen", "error");
     }
   },
@@ -250,27 +250,27 @@ const customers = {
       await spreadsheet.deleteCustomer(index);
       return true;
     } catch (error) {
-      console.error("Error deleting customer from sheet:", error);
+      // console.error("Error deleting customer from sheet:", error);
       throw error;
     }
   },
 
   async loadCustomers() {
     try {
-      console.log("Loading customers data...");
+      // console.log("Loading customers data...");
       this.currentCustomers = await spreadsheet.getCustomers();
-      console.log("Customers loaded:", this.currentCustomers.length);
+      // console.log("Customers loaded:", this.currentCustomers.length);
       this.renderCustomersTable();
       this.updateLatePaymentsTable(); // Auto update late payments juga
     } catch (error) {
-      console.error("Error loading customers:", error);
+      // console.error("Error loading customers:", error);
       app.showToast("Gagal memuat data konsumen", "error");
     }
   },
 
   async loadLatePayments() {
     try {
-      console.log("Loading late payments data...");
+      // console.log("Loading late payments data...");
       // Jika customers belum diload, load dulu
       if (this.currentCustomers.length === 0) {
         await this.loadCustomers();

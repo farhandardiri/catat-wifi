@@ -6,7 +6,7 @@ const reports = {
   },
 
   async init() {
-    console.log("Initializing reports...");
+    // console.log("Initializing reports...");
     await this.loadData();
     this.renderReports();
     this.setupEventListeners();
@@ -14,7 +14,7 @@ const reports = {
 
   async loadData() {
     try {
-      console.log("Loading data for reports...");
+      //   console.log("Loading data for reports...");
       const [transactions, customers] = await Promise.all([
         spreadsheet.getTransactions(),
         spreadsheet.getCustomers(),
@@ -25,12 +25,12 @@ const reports = {
         customers: customers,
       };
 
-      console.log(
-        "Reports data loaded - Transactions:",
-        transactions.length,
-        "Customers:",
-        customers.length
-      );
+      //   console.log(
+      //     "Reports data loaded - Transactions:",
+      //     transactions.length,
+      //     "Customers:",
+      //     customers.length
+      //   );
     } catch (error) {
       console.error("Error loading reports data:", error);
       app.showToast("Gagal memuat data laporan", "error");
@@ -174,9 +174,9 @@ const reports = {
     const endDateInclusive = new Date(endDate);
     endDateInclusive.setDate(endDateInclusive.getDate() + 1);
 
-    console.log(
-      `Custom filter: ${startDateInput.value} to ${endDateInput.value}`
-    );
+    // console.log(
+    //   `Custom filter: ${startDateInput.value} to ${endDateInput.value}`
+    // );
 
     // Filter data berdasarkan custom range
     const filteredTransactions = this.currentData.transactions.filter(
@@ -200,7 +200,7 @@ const reports = {
       customers: this.currentData.customers,
     };
 
-    console.log(`Custom filtered transactions: ${filteredTransactions.length}`);
+    // console.log(`Custom filtered transactions: ${filteredTransactions.length}`);
 
     // Render reports dengan data filtered
     this.renderFilteredReports(filteredData);
@@ -300,7 +300,7 @@ const reports = {
         return this.currentData;
     }
 
-    console.log(`Filtering data from ${startDate} to ${endDate}`); // Debug
+    // console.log(`Filtering data from ${startDate} to ${endDate}`); // Debug
 
     const filteredTransactions = this.currentData.transactions.filter(
       (transaction) => {
@@ -316,9 +316,9 @@ const reports = {
       }
     );
 
-    console.log(
-      `Filtered transactions: ${filteredTransactions.length} from ${this.currentData.transactions.length}`
-    ); // Debug
+    // console.log(
+    //   `Filtered transactions: ${filteredTransactions.length} from ${this.currentData.transactions.length}`
+    // ); // Debug
 
     return {
       transactions: filteredTransactions,
@@ -378,7 +378,7 @@ const reports = {
   renderSummaryCards(data) {
     const { transactions, customers } = data;
 
-    console.log("Transactions for calculation:", transactions); // Debug log
+    // console.log("Transactions for calculation:", transactions); // Debug log
 
     // Calculate totals - PERBAIKI LOGIKA INI
     const wifiIncome = this.calculateCategoryTotal(
@@ -426,17 +426,17 @@ const reports = {
       "Pengeluaran"
     );
 
-    // Debug logging
-    console.log("Calculation results:", {
-      wifiIncome,
-      otherIncome,
-      serviceIncome,
-      totalIncome,
-      totalExpenses,
-      electricityExpense,
-      internetExpense,
-      maintenanceExpense,
-    });
+    // // Debug logging
+    // console.log("Calculation results:", {
+    //   wifiIncome,
+    //   otherIncome,
+    //   serviceIncome,
+    //   totalIncome,
+    //   totalExpenses,
+    //   electricityExpense,
+    //   internetExpense,
+    //   maintenanceExpense,
+    // });
 
     const netProfit = totalIncome - totalExpenses;
 
@@ -503,16 +503,16 @@ const reports = {
       return;
     }
 
-    console.log(
-      "Rendering chart with filtered transactions:",
-      transactions.length
-    );
+    // console.log(
+    //   "Rendering chart with filtered transactions:",
+    //   transactions.length
+    // );
 
     // Group by month - method ini sudah otomatis pakai data yang difilter
     const monthlyData = this.groupTransactionsByMonth(transactions);
     const months = Object.keys(monthlyData);
 
-    console.log("Filtered monthly data for chart:", monthlyData);
+    // console.log("Filtered monthly data for chart:", monthlyData);
 
     if (months.length === 0) {
       chartContainer.innerHTML = `
@@ -530,7 +530,7 @@ const reports = {
     const incomeData = months.map((month) => monthlyData[month].income);
     const expenseData = months.map((month) => monthlyData[month].expense);
 
-    console.log("Filtered chart data:", { months, incomeData, expenseData });
+    // console.log("Filtered chart data:", { months, incomeData, expenseData });
 
     // Generate chart dengan data filtered
     chartContainer.innerHTML = this.generateInteractiveChart(
@@ -1087,5 +1087,5 @@ const reports = {
 // Initialize reports when tab is opened
 document.addEventListener("DOMContentLoaded", function () {
   // Reports akan di-initialize ketika tab laporan dibuka
-  console.log("Reports module loaded");
+  //   console.log("Reports module loaded");
 });

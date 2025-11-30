@@ -1,13 +1,13 @@
 // Main Application Controller - NO LOGIN REQUIRED FOR READ
 const app = {
   init() {
-    console.log("App initialization started - Read operations only");
+    // console.log("App initialization started - Read operations only");
     this.setupEventListeners();
     this.updateDashboard(); // Langsung load data tanpa login
   },
 
   setupEventListeners() {
-    console.log("Setting up event listeners");
+    // console.log("Setting up event listeners");
 
     // Transaction form - butuh login untuk submit
     const transactionForm = document.getElementById("transactionForm");
@@ -60,7 +60,7 @@ const app = {
   },
 
   onTabChange(tabId) {
-    console.log("Tab changed to:", tabId);
+    // console.log("Tab changed to:", tabId);
     switch (tabId) {
       case "#customers":
         customers.loadCustomers();
@@ -125,7 +125,7 @@ const app = {
   },
 
   async updateDashboard() {
-    console.log("Updating dashboard (READ operation - no login required)...");
+    // console.log("Updating dashboard (READ operation - no login required)...");
 
     try {
       const [transactions, customers] = await Promise.all([
@@ -133,12 +133,12 @@ const app = {
         spreadsheet.getCustomers(),
       ]);
 
-      console.log(
-        "Data received - Transactions:",
-        transactions.length,
-        "Customers:",
-        customers.length
-      );
+      // console.log(
+      //   "Data received - Transactions:",
+      //   transactions.length,
+      //   "Customers:",
+      //   customers.length
+      // );
 
       this.updateSummaryCards(transactions, customers);
       this.updateRecentTransactions(transactions);
@@ -230,7 +230,7 @@ const app = {
   },
 
   showSampleData() {
-    console.log("Showing sample data");
+    // console.log("Showing sample data");
     const sampleData = spreadsheet.getSampleData();
     this.updateSummaryCards(sampleData.transactions, sampleData.customers);
     this.updateRecentTransactions(sampleData.transactions);
@@ -268,6 +268,6 @@ const app = {
 
 // Initialize app - langsung tanpa tunggu login
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM fully loaded - Starting app in READ-ONLY mode");
+  // console.log("DOM fully loaded - Starting app in READ-ONLY mode");
   app.init();
 });
