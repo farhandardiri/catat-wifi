@@ -69,7 +69,7 @@ const app = {
         customers.loadLatePayments();
         break;
       case "#reports":
-        this.loadReports();
+        reports.loadReports();
         break;
     }
   },

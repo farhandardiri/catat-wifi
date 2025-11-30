@@ -578,67 +578,183 @@
         </div>
 
         <!-- Tab 5: Laporan -->
+        <!-- Di tab reports, ganti dengan yang lebih lengkap -->
         <div class="tab-pane fade" id="reports" role="tabpanel">
           <div class="row">
             <div class="col-12">
               <div class="card custom-card">
-                <div class="card-header bg-success text-white">
+                <div
+                  class="card-header bg-success text-white d-flex justify-content-between align-items-center"
+                >
                   <h5 class="card-title mb-0">
                     <i class="bi bi-graph-up"></i> Laporan Keuangan
                   </h5>
+                  <div id="filterInfo" class="small">
+                    <!-- Filter info akan dimuat di sini -->
+                  </div>
+
+                  <div class="btn-group">
+                    <button
+                      class="btn btn-light btn-sm"
+                      onclick="reports.refreshReports()"
+                    >
+                      <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <select
+                      class="form-select form-select-sm"
+                      id="dateRange"
+                      style="width: auto; margin-left: 10px"
+                    >
+                      <option value="all">Semua Waktu</option>
+                      <option value="today">Hari Ini</option>
+                      <option value="week">7 Hari Terakhir</option>
+                      <option value="month">Bulan Ini</option>
+                      <option value="year">Tahun Ini</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
                 </div>
+
+                <!-- Custom Date Range Section (Awalnya Disembunyikan) -->
+                <div
+                  id="customDateRange"
+                  class="mt-2"
+                  style="display: none"
+                ></div>
                 <div class="card-body">
                   <!-- Summary Cards -->
                   <div class="row mb-4">
-                    <div class="col-md-3">
+                    <div class="col-md-3 mb-3">
                       <div class="summary-card bg-primary">
-                        <h6>Total Pemasukan WiFi</h6>
-                        <h3 id="totalWifi">Rp 0</h3>
-                        <small>Bulan Ini</small>
+                        <h6>Pemasukan WiFi</h6>
+                        <h4 id="totalWifi">Rp 0</h4>
+                        <small>Total</small>
                       </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 mb-3">
                       <div class="summary-card bg-info">
-                        <h6>Total Pemasukan Barang</h6>
-                        <h3 id="totalBarang">Rp 0</h3>
-                        <small>Bulan Ini</small>
+                        <h6>Pemasukan Barang</h6>
+                        <h4 id="totalBarang">Rp 0</h4>
+                        <small>Total</small>
                       </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 mb-3">
+                      <div class="summary-card bg-secondary">
+                        <h6>Pemasukan Layanan</h6>
+                        <h4 id="totalLayanan">Rp 0</h4>
+                        <small>Total</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
                       <div class="summary-card bg-warning">
                         <h6>Total Pengeluaran</h6>
-                        <h3 id="totalPengeluaran">Rp 0</h3>
-                        <small>Bulan Ini</small>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="summary-card bg-success">
-                        <h6>Saldo Bersih</h6>
-                        <h3 id="saldoBersih">Rp 0</h3>
-                        <small>Bulan Ini</small>
+                        <h4 id="totalPengeluaran">Rp 0</h4>
+                        <small>Total</small>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Riwayat Transaksi -->
-                  <h5 class="mb-3">
-                    <i class="bi bi-clock-history"></i> Riwayat Transaksi
-                  </h5>
-                  <div class="table-responsive">
-                    <table class="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>Tanggal</th>
-                          <th>Jenis</th>
-                          <th>Kategori</th>
-                          <th>Deskripsi</th>
-                          <th class="text-end">Jumlah</th>
-                        </tr>
-                      </thead>
-                      <tbody id="transactionBody">
-                        <!-- Data transaksi akan diisi JavaScript -->
-                      </tbody>
-                    </table>
+                  <!-- Second Row Summary -->
+                  <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                      <div class="summary-card bg-success">
+                        <h6>Saldo Bersih</h6>
+                        <h4 id="saldoBersih">Rp 0</h4>
+                        <small>Profit</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <div class="summary-card bg-primary">
+                        <h6>Konsumen Aktif</h6>
+                        <h4 id="activeCustomers">0</h4>
+                        <small>Total</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <div class="summary-card bg-danger">
+                        <h6>Telat Bayar</h6>
+                        <h4 id="latePaymentsCount">0</h4>
+                        <small>Konsumen</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Charts Section -->
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="mb-0">
+                            <i class="bi bi-bar-chart"></i> Grafik Pemasukan vs
+                            Pengeluaran
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <div id="incomeExpenseChart"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Customer Statistics -->
+                  <div class="row mb-4">
+                    <div class="col-md-6">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="mb-0">
+                            <i class="bi bi-people"></i> Statistik Konsumen
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <div id="customerStats"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="mb-0">
+                            <i class="bi bi-pie-chart"></i> Distribusi Paket
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <div id="packageDistribution"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Transaction History -->
+                  <div class="card">
+                    <div
+                      class="card-header d-flex justify-content-between align-items-center"
+                    >
+                      <h6 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Riwayat Transaksi
+                      </h6>
+                      <span class="badge bg-primary" id="transactionCount"
+                        >0 transaksi</span
+                      >
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table class="table table-hover">
+                          <thead>
+                            <tr>
+                              <th>Tanggal</th>
+                              <th>Jenis</th>
+                              <th>Kategori</th>
+                              <th>Deskripsi</th>
+                              <th class="text-end">Jumlah</th>
+                              <th class="text-end">Waktu</th>
+                            </tr>
+                          </thead>
+                          <tbody id="transactionBody">
+                            <!-- Data transaksi akan diisi JavaScript -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -751,5 +867,6 @@
     <script src="js/customers.js"></script>
     <script src="js/fonnte.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/reports.js"></script>
   </body>
 </html>
