@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manajemen Keuangan WiFi</title>
+    <link rel="icon" type="image/x-icon" href="blink.png" />
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css" />
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body class="bg-light">
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Login Diperlukan</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body text-center">
+            <p>Login dengan Google diperlukan untuk menyimpan data.</p>
+            <button class="btn btn-primary btn-lg w-100" onclick="auth.login()">
+              <i class="bi bi-google me-2"></i> Login dengan Google
+            </button>
+            <div class="mt-2">
+              <small class="text-muted"
+                >Hanya butuh login untuk menambah/edit data</small
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Main Application (Awalnya Disembunyikan) -->
+    <!-- <div id="mainApp" style="display: none"> -->
+    <div class="container-fluid py-4">
+      <!-- Header -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 fw-bold text-primary">
+              <i class="bi bi-wifi"></i> Manajemen Keuangan WiFi
+            </h1>
+            <div class="d-flex align-items-center">
+              <span class="badge bg-warning me-2" id="loginStatus"
+                >Read Only</span
+              >
+              <button
+                class="btn btn-outline-primary btn-sm me-2"
+                onclick="auth.showLoginModal()"
+              >
+                <i class="bi bi-google"></i> Login untuk Edit
+              </button>
+              <button
+                class="btn btn-outline-danger btn-sm"
+                onclick="logout()"
+                style="display: none"
+                id="logoutBtn"
+              >
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </button>
+            </div>
+          </div>
+          <p class="text-muted">
+            Sistem pencatatan keuangan WiFi - Baca data gratis, butuh login
+            untuk edit
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link active"
+                id="transaction-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#transaction"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-cash-coin"></i> Transaksi
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="customers-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#customers"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-people"></i> Data Konsumen
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="latepayments-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#latepayments"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-exclamation-triangle"></i> Keterlambatan
+                <span class="badge bg-danger ms-1" id="lateBadge">0</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="notifications-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#notifications"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-chat-dots"></i> Notifikasi
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="reports-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#reports"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-graph-up"></i> Laporan
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="mainTabsContent">
+        <!-- Tab 1: Transaksi -->
+        <div class="tab-pane fade show active" id="transaction" role="tabpanel">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="card custom-card">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle"></i> Input Transaksi Baru
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <form id="transactionForm">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label for="tanggal" class="form-label">Tanggal</label>
+                        <input
+                          type="date"
+                          class="form-control"
+                          id="tanggal"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label for="jenis" class="form-label"
+                          >Jenis Transaksi</label
+                        >
+                        <select class="form-select" id="jenis" required>
+                          <option value="Pemasukan">Pemasukan</option>
+                          <option value="Pengeluaran">Pengeluaran</option>
+                        </select>
+                      </div>
+                      <div class="col-12">
+                        <label for="kategori" class="form-label"
+                          >Kategori</label
+                        >
+                        <select class="form-select" id="kategori" required>
+                          <optgroup label="Pemasukan">
+                            <option value="WIFI">WiFi</option>
+                            <option value="BRG">Barang Lain</option>
+                            <option value="LAY">Layanan</option>
+                          </optgroup>
+                          <optgroup label="Pengeluaran">
+                            <option value="LIST">Listrik</option>
+                            <option value="INT">Internet</option>
+                            <option value="PER">Perawatan</option>
+                          </optgroup>
+                        </select>
+                      </div>
+                      <div class="col-12">
+                        <label for="deskripsi" class="form-label"
+                          >Deskripsi</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="deskripsi"
+                          required
+                        />
+                      </div>
+                      <div class="col-12">
+                        <label for="jumlah" class="form-label">Jumlah</label>
+                        <div class="input-group">
+                          <span class="input-group-text">Rp</span>
+                          <input
+                            type="number"
+                            class="form-control"
+                            id="jumlah"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <button type="submit" class="btn btn-primary w-100">
+                          <i class="bi bi-save"></i> Simpan Transaksi
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card custom-card">
+                <div class="card-header bg-success text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> Transaksi Terbaru
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tanggal</th>
+                          <th>Jenis</th>
+                          <th>Kategori</th>
+                          <th>Deskripsi</th>
+                          <th class="text-end">Jumlah</th>
+                        </tr>
+                      </thead>
+                      <tbody id="recentTransactions">
+                        <!-- Data akan diisi JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Data Konsumen -->
+        <div class="tab-pane fade" id="customers" role="tabpanel">
+          <div class="row">
+            <div class="col-12">
+              <div class="card custom-card">
+                <div
+                  class="card-header bg-info text-white d-flex justify-content-between align-items-center"
+                >
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i> Data Konsumen WiFi
+                  </h5>
+                  <button
+                    class="btn btn-light btn-sm"
+                    onclick="customers.showCustomerModal()"
+                  >
+                    <i class="bi bi-person-plus"></i> Tambah Konsumen
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-hover" id="customersTable">
+                      <thead>
+                        <tr>
+                          <th>Nama</th>
+                          <th>No HP</th>
+                          <th>Paket</th>
+                          <th>Harga</th>
+                          <th>Mulai</th>
+                          <th>Berakhir</th>
+                          <th>Status</th>
+                          <th>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody id="customersTableBody">
+                        <!-- Data konsumen akan diisi JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Keterlambatan -->
+        <div class="tab-pane fade" id="latepayments" role="tabpanel">
+          <div class="row">
+            <div class="col-12">
+              <div class="card custom-card">
+                <div class="card-header bg-warning text-dark">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Konsumen Telat
+                    Bayar
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <!-- Summary Cards -->
+                  <div class="row mb-4">
+                    <div class="col-md-3">
+                      <div class="summary-card bg-danger">
+                        <h6>Total Telat Bayar</h6>
+                        <h3 id="totalLate">0</h3>
+                        <small>Konsumen</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="summary-card bg-warning">
+                        <h6>Total Tunggakan</h6>
+                        <h3 id="totalTunggakan">Rp 0</h3>
+                        <small>Jumlah</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="summary-card bg-info">
+                        <h6>Notifikasi Terkirim</h6>
+                        <h3 id="notifTerkirim">0</h3>
+                        <small>Hari Ini</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="summary-card bg-success">
+                        <h6>Berhasil Dibayar</h6>
+                        <h3 id="paidToday">0</h3>
+                        <small>Hari Ini</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Late Payments Table -->
+                  <div class="table-responsive mt-2">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Nama</th>
+                          <th>No HP</th>
+                          <th>Paket</th>
+                          <th>Jatuh Tempo</th>
+                          <th>Hari Telat</th>
+                          <th>Tunggakan</th>
+                          <th>Terakhir Notif</th>
+                          <th>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody id="latePaymentsTableBody">
+                        <!-- Data keterlambatan -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Notifikasi -->
+        <div class="tab-pane fade" id="notifications" role="tabpanel">
+          <div class="row">
+            <div class="col-lg-4">
+              <div class="card custom-card mb-4">
+                <div class="card-header bg-dark text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-key"></i> Konfigurasi Fonnte
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label for="fonnteToken" class="form-label"
+                      >Fonnte API Token</label
+                    >
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="fonnteToken"
+                      placeholder="Masukkan token Fonnte Anda"
+                    />
+                    <div class="form-text">
+                      Token akan disimpan secara aman di browser Anda
+                    </div>
+                  </div>
+                  <button
+                    class="btn btn-outline-primary w-100 mb-2"
+                    onclick="fonnte.testConnection()"
+                  >
+                    <i class="bi bi-plug"></i> Test Koneksi
+                  </button>
+                  <button
+                    class="btn btn-outline-success w-100"
+                    onclick="fonnte.saveConfig()"
+                  >
+                    <i class="bi bi-check-circle"></i> Simpan Konfigurasi
+                  </button>
+                </div>
+              </div>
+
+              <div class="card custom-card">
+                <div class="card-header bg-secondary text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-gear"></i> Pengaturan Notifikasi
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">Auto Reminder</label>
+                    <select class="form-select" id="autoReminder">
+                      <option value="enabled">Aktif</option>
+                      <option value="disabled">Non-Aktif</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Jadwal Check</label>
+                    <select class="form-select" id="scheduleTime">
+                      <option value="09:00">Setiap Jam 09:00</option>
+                      <option value="14:00">Setiap Jam 14:00</option>
+                      <option value="17:00">Setiap Jam 17:00</option>
+                    </select>
+                  </div>
+                  <button
+                    class="btn btn-outline-primary w-100"
+                    onclick="notifications.saveSettings()"
+                  >
+                    <i class="bi bi-save"></i> Simpan Pengaturan
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-8">
+              <div class="card custom-card">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-chat-quote"></i> Template Pesan
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <ul
+                    class="nav nav-pills mb-3"
+                    id="templateTabs"
+                    role="tablist"
+                  >
+                    <li class="nav-item" role="presentation">
+                      <button
+                        class="nav-link active"
+                        data-bs-toggle="pill"
+                        data-bs-target="#gentle-template"
+                      >
+                        Ringan
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button
+                        class="nav-link"
+                        data-bs-toggle="pill"
+                        data-bs-target="#urgent-template"
+                      >
+                        Urgent
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button
+                        class="nav-link"
+                        data-bs-toggle="pill"
+                        data-bs-target="#final-template"
+                      >
+                        Final
+                      </button>
+                    </li>
+                  </ul>
+
+                  <div class="tab-content">
+                    <div class="tab-pane fade show active" id="gentle-template">
+                      <div class="mb-3">
+                        <label class="form-label"
+                          >Reminder Ringan (3 hari sebelum jatuh tempo)</label
+                        >
+                        <textarea
+                          class="form-control"
+                          id="templateGentle"
+                          rows="4"
+                        ></textarea>
+                      </div>
+                      <div class="template-preview">
+                        <strong>Preview:</strong>
+                        <div id="previewGentle" class="mt-1"></div>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="urgent-template">
+                      <div class="mb-3">
+                        <label class="form-label"
+                          >Reminder Urgent (1 hari setelah jatuh tempo)</label
+                        >
+                        <textarea
+                          class="form-control"
+                          id="templateUrgent"
+                          rows="4"
+                        ></textarea>
+                      </div>
+                      <div class="template-preview">
+                        <strong>Preview:</strong>
+                        <div id="previewUrgent" class="mt-1"></div>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="final-template">
+                      <div class="mb-3">
+                        <label class="form-label"
+                          >Final Warning (7+ hari telat)</label
+                        >
+                        <textarea
+                          class="form-control"
+                          id="templateFinal"
+                          rows="4"
+                        ></textarea>
+                      </div>
+                      <div class="template-preview">
+                        <strong>Preview:</strong>
+                        <div id="previewFinal" class="mt-1"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    class="btn btn-success w-100 mt-3"
+                    onclick="notifications.saveTemplates()"
+                  >
+                    <i class="bi bi-save"></i> Simpan Semua Template
+                  </button>
+                </div>
+              </div>
+
+              <!-- Log Notifikasi -->
+              <div class="card custom-card mt-4">
+                <div class="card-header bg-info text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-list-check"></i> Log Notifikasi
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="notification-log" id="notificationLog">
+                    <!-- Log akan diisi JavaScript -->
+                  </div>
+                  <button
+                    class="btn btn-outline-secondary w-100 mt-3"
+                    onclick="notifications.clearLog()"
+                  >
+                    <i class="bi bi-trash"></i> Bersihkan Log
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Laporan -->
+        <div class="tab-pane fade" id="reports" role="tabpanel">
+          <div class="row">
+            <div class="col-12">
+              <div class="card custom-card">
+                <div class="card-header bg-success text-white">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up"></i> Laporan Keuangan
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <!-- Summary Cards -->
+                  <div class="row mb-4">
+                    <div class="col-md-3">
+                      <div class="summary-card bg-primary">
+                        <h6>Total Pemasukan WiFi</h6>
+                        <h3 id="totalWifi">Rp 0</h3>
+                        <small>Bulan Ini</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="summary-card bg-info">
+                        <h6>Total Pemasukan Barang</h6>
+                        <h3 id="totalBarang">Rp 0</h3>
+                        <small>Bulan Ini</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="summary-card bg-warning">
+                        <h6>Total Pengeluaran</h6>
+                        <h3 id="totalPengeluaran">Rp 0</h3>
+                        <small>Bulan Ini</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="summary-card bg-success">
+                        <h6>Saldo Bersih</h6>
+                        <h3 id="saldoBersih">Rp 0</h3>
+                        <small>Bulan Ini</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Riwayat Transaksi -->
+                  <h5 class="mb-3">
+                    <i class="bi bi-clock-history"></i> Riwayat Transaksi
+                  </h5>
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tanggal</th>
+                          <th>Jenis</th>
+                          <th>Kategori</th>
+                          <th>Deskripsi</th>
+                          <th class="text-end">Jumlah</th>
+                        </tr>
+                      </thead>
+                      <tbody id="transactionBody">
+                        <!-- Data transaksi akan diisi JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- </div> -->
+
+    <!-- Modal Tambah Konsumen -->
+    <div class="modal fade" id="customerModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Tambah Konsumen Baru</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="addCustomerForm">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nama Konsumen</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="customerName"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Nomor HP</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="customerPhone"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Paket WiFi</label>
+                  <select class="form-select" id="customerPackage" required>
+                    <option value="10Mbps">10Mbps - Rp 150.000</option>
+                    <option value="20Mbps">20Mbps - Rp 250.000</option>
+                    <option value="50Mbps">50Mbps - Rp 400.000</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Harga</label>
+                  <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="customerPrice"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Tanggal Mulai</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="startDate"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Tanggal Berakhir</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="endDate"
+                    required
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="customers.saveCustomer()"
+            >
+              Simpan Konsumen
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/spreadsheet.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/fonnte.js"></script>
+    <script src="js/notifications.js"></script>
+  </body>
+</html>
