@@ -218,10 +218,18 @@
                         <label for="jumlah" class="form-label">Jumlah</label>
                         <div class="input-group">
                           <span class="input-group-text">Rp</span>
-                          <input
+                          <!-- <input
                             type="number"
                             class="form-control"
                             id="jumlah"
+                            required
+                          /> -->
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="jumlah"
+                            placeholder="0"
+                            oninput="reports.formatCurrency(this)"
                             required
                           />
                         </div>

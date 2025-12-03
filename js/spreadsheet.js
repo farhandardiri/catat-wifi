@@ -313,13 +313,115 @@ const spreadsheet = {
     }
   },
 
+  async saveLogsNotif(logsData) {
+    try {
+      // Validasi data
+      if (!logsData || !logsData.message || !logsData.status) {
+        throw new Error("Data log tidak valid: message dan status diperlukan");
+      }
+
+      // Generate ID jika tidak ada
+      const id = logsData.id || (await this.getSheetId("LogsNotif"));
+
+      // Siapkan values sesuai urutan kolom di sheet
+      const values = [
+        id, // id
+        logsData.nama || logsData.customerName || "", // customer_id
+        logsData.timestamp || reports.formatDateForDisplay(new Date()), // tanggal
+        logsData.jenisNotif || "WhatsApp", // jenis_notif
+        logsData.message.substring(0, 50000), // pesan (max 50k chars untuk Google Sheets)
+        logsData.status, // status
+        this.formatResponse(logsData.response), // response
+        logsData.phone || "", // Kolom baru untuk phone
+      ];
+
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.SHEET_ID}/values/LogsNotif:append?valueInputOption=USER_ENTERED`;
+
+      const response = await this.makeWriteRequest(url, {
+        method: "POST",
+        body: JSON.stringify({
+          values: [values],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Google Sheets Error: ${
+            errorData.error?.message || response.statusText
+          }`
+        );
+      }
+
+      const result = await response.json();
+      console.log("Log berhasil disimpan ke Google Sheet:", result);
+      return result;
+    } catch (error) {
+      console.error("Error saveLogsNotif:", error);
+      throw error;
+    }
+  },
+
+  // Helper: Format response
+  formatResponse(response) {
+    if (!response) return "";
+
+    if (typeof response === "object") {
+      try {
+        // Sederhanakan response jika terlalu besar
+        const simplified = {
+          status: response.status,
+          message: response.message || response.error,
+          messageId: response.messageId,
+          timestamp: response.timestamp || new Date().toISOString(),
+        };
+        return JSON.stringify(simplified);
+      } catch (e) {
+        return String(response).substring(0, 50000);
+      }
+    }
+
+    return String(response).substring(0, 50000);
+  },
+
+  async getLogsNotif() {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.SHEET_ID}/values/LogsNotif`;
+
+      const response = await this.makeReadRequest(url);
+      const data = await response.json();
+
+      if (!data.values) {
+        // console.log("No customers data found");
+        return [];
+      }
+
+      const headers = data.values[0];
+      const logsNotifs = data.values.slice(1).map((row) => {
+        const logs = {};
+        headers.forEach((header, index) => {
+          logs[header.toLowerCase()] = row[index] || "";
+        });
+        return logs;
+      });
+
+      // console.log("Processed customers count:", customers.length);
+      return logsNotifs;
+    } catch (error) {
+      // console.error("Error getCustomers:", error);
+      return this.getSampleData().customers;
+    }
+  },
+
   // Helper method untuk mendapatkan sheet ID
+
   async getSheetId(sheetName) {
     // Ini perlu disesuaikan dengan setup Google Sheets Anda
     // Biasanya sheet ID untuk "Customers" adalah 0 untuk sheet pertama, dst.
     const sheetIds = {
       Transaksi: 0,
-      Customers: 123456789, // Ganti dengan sheet ID yang benar
+      Customers: 1984632184, // Ganti dengan sheet ID yang benar
+      LogsNotif: 1092944517,
     };
     return sheetIds[sheetName] || 0;
   },

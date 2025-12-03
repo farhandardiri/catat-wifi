@@ -331,6 +331,44 @@ const notifications = {
       });
 
       const result = await response.json();
+      // Tentukan status
+      let status;
+      let logMessage = message;
+      let responseData = result;
+
+      if (
+        result.status === "sent" ||
+        result.status === true ||
+        result.messageId
+      ) {
+        status = "success";
+        app.showToast(
+          `✅ Notifikasi terkirim ke ${customer.name || customer.nama}`,
+          "success"
+        );
+      } else {
+        status = "failed";
+        app.showToast(
+          `❌ Gagal mengirim ke ${customer.name || customer.nama}: ${
+            result.message || result.error
+          }`,
+          "error"
+        );
+      }
+
+      // ✅ SIMPAN LOG KE GOOGLE SHEET
+      await this.saveLogToGoogleSheet({
+        nama: customer.name || customer.nama || "",
+        phone: phone,
+        message: logMessage,
+        status: status,
+        response: responseData,
+        jenisNotif: type,
+        customerName: customer.name || customer.nama,
+      });
+
+      // ✅ TAMPILKAN DI UI
+      this.logNotification(phone, logMessage, status, responseData);
 
       // ✅ SIMPAN DATA TERAKHIR
       this.lastNotification = {
@@ -342,45 +380,76 @@ const notifications = {
             customer.Berakhir || customer.berakhir
           ),
         },
-        message: message,
+        message: logMessage,
         type: type,
-        status:
-          result.status === "sent" || result.status === true || result.messageId
-            ? "success"
-            : "failed",
+        status: status,
         timestamp: new Date().toISOString(),
         response: result,
       };
 
-      // ✅ TAMPILKAN DATA TERAKHIR DI UI
+      this.saveLastNotificationToStorage();
       this.showLastNotification();
 
-      if (
-        result.status === "sent" ||
-        result.status === true ||
-        result.messageId
-      ) {
-        app.showToast(
-          `✅ Notifikasi terkirim ke ${customer.name || customer.nama}`,
-          "success"
-        );
-        this.logNotification(phone, message, "success", result);
-      } else {
-        app.showToast(
-          `❌ Gagal mengirim ke ${customer.name || customer.nama}: ${
-            result.message || result.error
-          }`,
-          "error"
-        );
-        this.logNotification(phone, message, "failed", result);
-      }
+      // // ✅ SIMPAN DATA TERAKHIR
+      // this.lastNotification = {
+      //   customer: {
+      //     name: customer.name || customer.nama,
+      //     phone: phone,
+      //     package: customer.package || customer.paket,
+      //     days_late: this.calculateDaysLate(
+      //       customer.Berakhir || customer.berakhir
+      //     ),
+      //   },
+      //   message: message,
+      //   type: type,
+      //   status:
+      //     result.status === "sent" || result.status === true || result.messageId
+      //       ? "success"
+      //       : "failed",
+      //   timestamp: new Date().toISOString(),
+      //   response: result,
+      // };
 
-      this.saveLastNotificationToStorage(); // ✅ Simpan ke localStorage
-      this.showLastNotification(); // ✅ Tampilkan di UI
-      this.showLastNotificationToast(); // ✅ Tampilkan toast (optional)
+      // // ✅ TAMPILKAN DATA TERAKHIR DI UI
+      // this.showLastNotification();
+
+      // if (
+      //   result.status === "sent" ||
+      //   result.status === true ||
+      //   result.messageId
+      // ) {
+      //   app.showToast(
+      //     `✅ Notifikasi terkirim ke ${customer.name || customer.nama}`,
+      //     "success"
+      //   );
+      //   this.logNotification(phone, message, "success", result);
+      // } else {
+      //   app.showToast(
+      //     `❌ Gagal mengirim ke ${customer.name || customer.nama}: ${
+      //       result.message || result.error
+      //     }`,
+      //     "error"
+      //   );
+      //   this.logNotification(phone, message, "failed", result);
+      // }
+
+      // this.saveLastNotificationToStorage(); // ✅ Simpan ke localStorage
+      // this.showLastNotification(); // ✅ Tampilkan di UI
+      // this.showLastNotificationToast(); // ✅ Tampilkan toast (optional)
     } catch (error) {
       console.error("Send message error:", error);
       app.showToast(`❌ Error mengirim notifikasi: ${error.message}`, "error");
+      // ✅ SIMPAN LOG ERROR KE GOOGLE SHEET
+      await this.saveLogToGoogleSheet({
+        nama: customer?.nama || customer?.name || "UNKNOWN",
+        phone: customer?.phone || "UNKNOWN",
+        message: "Error sending notification: " + error.message,
+        status: "error",
+        response: error.toString(),
+        jenisNotif: "WhatsApp",
+        customerName: customer?.name || "Unknown",
+      });
+
       this.logNotification(
         "UNKNOWN",
         "Error sending",
@@ -391,6 +460,128 @@ const notifications = {
       this.isSending = false;
     }
   },
+
+  // Fungsi untuk menyimpan log ke Google Sheet
+  async saveLogToGoogleSheet(logData) {
+    try {
+      // Prepare data untuk Google Sheet
+      const logsData = {
+        nama: logData.name || logData.customerName || "UNKNOWN",
+        tanggal: new Date().toISOString(),
+        jenisNotif: logData.jenisNotif || "WhatsApp",
+        message: logData.message,
+        status: logData.status,
+        response: logData.response,
+        phone: logData.phone,
+      };
+
+      // Panggil fungsi dari spreadsheet.js
+      if (typeof spreadsheet !== "undefined" && spreadsheet.saveLogsNotif) {
+        const result = await spreadsheet.saveLogsNotif(logsData);
+        console.log("Log berhasil disimpan ke Google Sheet:", result);
+        return true;
+      } else {
+        console.warn(
+          "Spreadsheet module tidak ditemukan, simpan ke localStorage"
+        );
+        // this.saveLogToLocalFallback(logsData);
+        return false;
+      }
+    } catch (error) {
+      console.error("Gagal menyimpan log ke Google Sheet:", error);
+
+      // Fallback: simpan ke localStorage untuk dikirim ulang nanti
+      // this.saveLogToLocalFallback({
+      //   ...logData,
+      //   error: error.message,
+      //   retryCount: 0,
+      // });
+
+      return false;
+    }
+  },
+
+  // // Fallback: simpan ke localStorage
+  // saveLogToLocalFallback(logData) {
+  //   try {
+  //     const pendingLogs = JSON.parse(
+  //       localStorage.getItem("pendingLogs") || "[]"
+  //     );
+  //     pendingLogs.push({
+  //       ...logData,
+  //       timestamp: new Date().toISOString(),
+  //       savedLocally: true,
+  //     });
+
+  //     localStorage.setItem("pendingLogs", JSON.stringify(pendingLogs));
+
+  //     // Tampilkan notifikasi
+  //     this.showOfflineNotification();
+
+  //     // Coba sync otomatis setelah 30 detik
+  //     setTimeout(() => this.retryPendingLogs(), 30000);
+  //   } catch (e) {
+  //     console.error("Gagal menyimpan ke localStorage:", e);
+  //   }
+  // },
+
+  // // Coba kirim ulang log yang pending
+  // async retryPendingLogs() {
+  //   try {
+  //     const pendingLogs = JSON.parse(
+  //       localStorage.getItem("pendingLogs") || "[]"
+  //     );
+
+  //     if (pendingLogs.length === 0) return;
+
+  //     console.log(`Mencoba sync ${pendingLogs.length} log yang pending...`);
+
+  //     const successfulLogs = [];
+  //     const failedLogs = [];
+
+  //     for (const log of pendingLogs) {
+  //       try {
+  //         // Hapus properti internal sebelum dikirim
+  //         const { savedLocally, retryCount, ...cleanLog } = log;
+
+  //         if (spreadsheet && spreadsheet.saveLogsNotif) {
+  //           await spreadsheet.saveLogsNotif(cleanLog);
+  //           successfulLogs.push(log);
+  //         }
+  //       } catch (error) {
+  //         failedLogs.push(log);
+  //       }
+  //     }
+
+  //     // Update localStorage
+  //     localStorage.setItem("pendingLogs", JSON.stringify(failedLogs));
+
+  //     if (successfulLogs.length > 0) {
+  //       console.log(`Berhasil sync ${successfulLogs.length} log`);
+  //       this.showSyncSuccessNotification(successfulLogs.length);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error retryPendingLogs:", error);
+  //   }
+  // },
+
+  // // Tampilkan notifikasi offline
+  // showOfflineNotification() {
+  //   const notification = document.getElementById("offlineNotification");
+  //   if (notification) {
+  //     notification.style.display = "block";
+  //     setTimeout(() => {
+  //       notification.style.display = "none";
+  //     }, 5000);
+  //   }
+  // },
+
+  // showSyncSuccessNotification(count) {
+  //   app.showToast(
+  //     `Berhasil sinkronisasi ${count} log ke Google Sheet`,
+  //     "success"
+  //   );
+  // },
 
   // ✅ METHOD BARU: Tampilkan data notifikasi terakhir
   showLastNotification() {

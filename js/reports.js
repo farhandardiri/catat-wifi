@@ -15,14 +15,16 @@ const reports = {
   async loadData() {
     try {
       //   console.log("Loading data for reports...");
-      const [transactions, customers] = await Promise.all([
+      const [transactions, customers, logs] = await Promise.all([
         spreadsheet.getTransactions(),
         spreadsheet.getCustomers(),
+        spreadsheet.getLogsNotif(),
       ]);
 
       this.currentData = {
         transactions: transactions,
         customers: customers,
+        logsNotif: logs,
       };
 
       //   console.log(
@@ -1053,6 +1055,23 @@ const reports = {
     } catch (error) {
       return dateTimeString;
     }
+  },
+
+  formatCurrency(input) {
+    // Hapus semua karakter selain angka
+    let value = input.value.replace(/\D/g, "");
+
+    // Format dengan pemisah ribuan
+    if (value.length > 0) {
+      value = parseInt(value).toLocaleString("id-ID");
+      input.value = value;
+    }
+  },
+
+  // Untuk mendapatkan nilai angka murni
+  getNumericValue() {
+    const formattedValue = document.getElementById("jumlah").value;
+    return formattedValue.replace(/\./g, "");
   },
 
   // Export functionality
