@@ -1,7 +1,7 @@
 // Fonnte API Integration
 const fonnte = {
   API_URL: "https://api.fonnte.com/send",
-  token: "DP85E5FN9HnDogvNAe78",
+  token: "73Jg14QDEFcUJcULnXuf",
 
   loadConfig() {
     this.token = localStorage.getItem("fonnteToken") || "";
