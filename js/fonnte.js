@@ -28,7 +28,7 @@ const fonnte = {
           Authorization: this.token,
         },
         body: JSON.stringify({
-          target: "6282334130897", // Test number
+          target: "6289601982312", // Test number
           message: "Test connection dari sistem WiFi Management",
           token: this.token,
         }),
